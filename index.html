@@ -8,37 +8,112 @@
     <!-- Mapbox GL JS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.13.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.13.0/mapbox-gl.js"></script>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary-color: #6a11cb;
             --secondary-color: #2575fc;
             --error-color: #d32f2f;
+            --text-color: #EAEAEA;
+            --subtle-text-color: #B0B0B0;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: #1c1c1e; /* Dark background for the glass effect to pop */
+            color: var(--text-color);
             margin: 0;
-            overflow: hidden; /* Prevents scrolling the whole page */
+            overflow: hidden;
         }
 
         .main-container {
             display: flex;
-            flex-direction: column; /* Mobile first */
+            flex-direction: column;
             height: 100vh;
-            filter: blur(8px); /* Initially blurred */
+            width: 100vw;
+            filter: blur(8px);
             transition: filter 0.5s ease-out;
         }
 
         .main-container.active {
             filter: blur(0);
+        }
+
+        #map {
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        /* --- Timeline Bar (Bottom) --- */
+        .timeline-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 15px 0;
+            box-sizing: border-box;
+        }
+
+        .timeline-list {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 12px;
+            padding: 0 20px;
+            list-style: none;
+            margin: 0;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        .timeline-list::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari, and Opera */
+        }
+
+        /* --- Glassmorphism Timeline Event --- */
+        .timeline-event {
+            flex: 0 0 auto; /* Prevent items from shrinking */
+            width: 180px;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 18px;
+            scroll-snap-align: start;
+            transition: background-color 0.4s, border 0.4s;
+
+            /* Glassmorphism Effect */
+            background: rgba(70, 70, 70, 0.3);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .timeline-event:hover {
+            background: rgba(90, 90, 90, 0.5);
+        }
+
+        .timeline-event.active {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .timeline-event .date {
+            font-weight: 500;
+            font-size: 0.85rem;
+            /* color: var(--secondary-color); */
+            margin-bottom: 5px;
+        }
+
+        .timeline-event .title {
+            font-size: 1.05rem;
+            color: var(--text-color);
+            font-weight: 400;
         }
 
         /* --- Modal Styling --- */
@@ -63,28 +138,32 @@
         }
 
         .modal-content {
-            background: white;
+            background: #2c2c2e;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 16px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             width: 90%;
             max-width: 400px;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .modal-content h2 {
             font-family: 'Playfair Display', serif;
             margin-bottom: 20px;
+            color: var(--text-color);
         }
         
         .modal-content select, .modal-content button {
             width: 100%;
             padding: 12px;
             margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+            border-radius: 8px;
+            border: 1px solid #444;
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
+            background: #3a3a3c;
+            color: var(--text-color);
         }
         
         .modal-content button {
@@ -99,14 +178,10 @@
             background-color: var(--secondary-color);
         }
 
-        .question {
-            display: none;
-        }
-
-        .question.active {
-            display: block;
-        }
+        .question { display: none; }
+        .question.active { display: block; }
         
+        /* --- Incorrect Answer Modal --- */
         .incorrect-modal-overlay {
             position: fixed;
             top: 0;
@@ -117,7 +192,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1001; /* Higher z-index to appear on top */
+            z-index: 1001;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease-in-out;
@@ -129,15 +204,15 @@
         }
 
         .incorrect-modal-content {
-            background: white;
+            background: #2c2c2e;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+            border-radius: 16px;
             width: 90%;
             max-width: 420px;
             text-align: center;
             transform: scale(0.9);
             transition: transform 0.3s ease-in-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .incorrect-modal-overlay.visible .incorrect-modal-content {
@@ -154,6 +229,7 @@
              font-size: 1rem;
              line-height: 1.6;
              margin-bottom: 25px;
+             color: var(--subtle-text-color);
         }
 
         .incorrect-modal-content button {
@@ -162,7 +238,7 @@
             cursor: pointer;
             border: none;
             padding: 12px 30px;
-            border-radius: 5px;
+            border-radius: 8px;
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
             transition: background-color 0.3s;
@@ -170,60 +246,6 @@
         
         .incorrect-modal-content button:hover {
              background-color: #b71c1c;
-        }
-
-        /* --- Timeline Styling --- */
-        .timeline-bar {
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .timeline-bar h2 {
-            font-family: 'Playfair Display', serif;
-            text-align: center;
-            margin: 0 0 20px 0;
-            font-size: 1.8rem;
-        }
-
-        .timeline-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .timeline-event {
-            padding: 15px;
-            cursor: pointer;
-            border-left: 4px solid transparent;
-            transition: background-color 0.3s, border-left 0.3s;
-        }
-        
-        .timeline-event:hover {
-            background-color: #f0f0f0;
-        }
-
-        .timeline-event.active {
-            border-left: 4px solid var(--primary-color);
-            background-color: #e8eaf6;
-        }
-
-        .timeline-event .date {
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: var(--primary-color);
-        }
-
-        .timeline-event .title {
-            font-size: 1.1rem;
-        }
-
-        /* --- Map Styling --- */
-        #map {
-            flex-grow: 1; /* Takes up remaining space */
-            width: 100%;
         }
 
         /* --- Mapbox Popup Customization --- */
@@ -234,16 +256,21 @@
 
         .mapboxgl-popup-content {
             padding: 0;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            /* Applying glassmorphism to popup */
+            background: rgba(40, 40, 40, 0.75);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         
         .popup-image {
             width: 100%;
-            height: 100%;
+            height: 250px; /* Fixed height for consistency */
             object-fit: cover;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
         }
 
         .popup-text {
@@ -254,27 +281,22 @@
              font-family: 'Playfair Display', serif;
              margin: 0 0 5px 0;
              font-size: 1.5rem;
+             color: var(--text-color);
         }
         
         .popup-text p {
             margin: 0;
             font-size: 0.95rem;
             line-height: 1.5;
+            color: var(--subtle-text-color);
         }
 
-        /* --- Desktop Layout --- */
-        @media (min-width: 768px) {
-            .main-container {
-                flex-direction: row;
-            }
-
-            .timeline-bar {
-                width: 350px;
-                height: 100vh;
-                border-right: 1px solid #ddd;
-                border-bottom: none;
-            }
+        .mapboxgl-popup-close-button {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            padding: 5px;
         }
+
     </style>
 </head>
 <body>
@@ -317,14 +339,14 @@
         </div>
     </div>
 
+    <!-- HTML structure changed: Map comes first, then the timeline bar -->
     <div class="main-container" id="main-container">
+        <div id="map"></div>
         <div class="timeline-bar">
-            <h2>Our Story</h2>
             <ul class="timeline-list" id="timeline-list">
-                <!-- Date items will be inserted here -->
+                <!-- Date items will be inserted here by JavaScript -->
             </ul>
         </div>
-        <div id="map"></div>
     </div>
 
     <script>
@@ -336,7 +358,7 @@
                 description: "Where it all began! I had never been more excited about a notification than that day.",
                 coordinates: [72.5606902, 23.0272707],
                 image: "first-text.png",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Date",
@@ -344,7 +366,7 @@
                 description: "Our First Meeting! Seeing you in person for the first time was truly magical. I couldn't believe that you were actually real.",
                 coordinates: [72.5399, 23.0300], 
                 image: "first-date.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Kiss",
@@ -352,7 +374,7 @@
                 description: "That First Kiss. Absolutely magnetic and we just couldn't stop after that day.",
                 coordinates: [72.496107,23.0771561], 
                 image: "first-kiss.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Its Official!",
@@ -360,7 +382,7 @@
                 description: "The start of my first relationship! No more just dating or seeing each other, we are now a real couple.",
                 coordinates: [72.4431191,23.1263036], 
                 image: "first-relationship.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Navratri",
@@ -368,7 +390,7 @@
                 description: "Our first Navratri together! I was never the type of person to celebrate navratri but you changed me.",
                 coordinates: [72.5040826,23.0197201], 
                 image: "first-navratri.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Kankaria",
@@ -376,7 +398,7 @@
                 description: "That Kankaria Date. The Train Ride, The Rain, The Photos. Just Perfection.",
                 coordinates: [72.601149,23.0061556], 
                 image: "kankaria.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First New Years",
@@ -384,7 +406,7 @@
                 description: "Our First New Years together. Excellent food and it felt more like a double date with my parents rather than them taking us somewhere.",
                 coordinates: [72.4990401, 23.0907685], 
                 image: "first-new-years.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Half Anniversary",
@@ -392,7 +414,7 @@
                 description: "Our First Half Anniversary. And with the exact same outfits as our first date. We thought we would look different but its basically the same.",
                 coordinates: [72.5400857,23.0299867], 
                 image: "first-half-anniversary.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Time",
@@ -400,7 +422,7 @@
                 description: "Our Magical First Time. From building up the courage to buy protection to sneaking you in at night and trying to make you stay calm and feel protected. The most unforgettable night.",
                 coordinates: [72.532025, 23.016435], 
                 image: "first-time.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Valentines",
@@ -408,7 +430,7 @@
                 description: "Our First Valentines Day. I never thought I would ever celebrate this day with someone but you changed that quicker than I could say 'Valentines'.",
                 coordinates: [72.510025, 23.043703], 
                 image: "first-valentines.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Vadodra Visit",
@@ -416,7 +438,7 @@
                 description: "My first visit to Vadodra and also the first time I have ever travelled alone. I was scared to death but it was worth it for getting to visit you after days of not even seeing each other.",
                 coordinates: [73.190583, 22.343995], 
                 image: "first-vadodra-visit.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Anniversary",
@@ -424,7 +446,7 @@
                 description: "Our First Anniversary! That we had to celebrate a few days late... totally not my stomach's fault.",
                 coordinates: [72.509834, 23.043802], 
                 image: "first-anniversary.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Second Navratri",
@@ -432,7 +454,7 @@
                 description: "Our Second Navratri! This time around we are an experienced couple and even organizing the whole gathering.",
                 coordinates: [72.481054, 23.038392], 
                 image: "second-navratri.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Second Vadodra Visit",
@@ -440,7 +462,7 @@
                 description: "My Second Vadodra Visit but more importantly, my first sleepover at your home. I really hit it off with chini as well this time.",
                 coordinates: [73.190597, 22.343942], 
                 image: "second-vadodra-visit.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Second New Years",
@@ -448,7 +470,7 @@
                 description: "Our Second New Years Together! We have now seen 2023, 2024 and 2025 together.",
                 coordinates: [72.501215, 23.115359], 
                 image: "second-new-years.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Second Half Anniversary",
@@ -456,7 +478,7 @@
                 description: "One and a half years completed. The surprise you gave me that day shocked me so hard I couldn't even believe anything.",
                 coordinates: [72.5436161, 23.0283865], 
                 image: "second-half-anniversary.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Second Valentines",
@@ -464,7 +486,7 @@
                 description: "Our Second Valentines Day Together! And unexpectedly in Vadodra this time around.",
                 coordinates: [73.171609, 22.325102], 
                 image: "second-valentines.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Holi",
@@ -472,7 +494,7 @@
                 description: "Our First Holi Together! we rarely spend holidays together but this time we were able to stick together.",
                 coordinates: [72.515982, 23.018453], 
                 image: "first-holi.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "First Concert",
@@ -480,15 +502,15 @@
                 description: "Our First Concert Together! I never thought I would attend a concert in my life. But attending this one with you was so special.",
                 coordinates: [72.599090, 23.010976], 
                 image: "first-concert.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Law Garden",
                 date: "2023-2023",
                 description: "Our old hangout spot back when you were at your old PG. Also the location of my first hug!",
-                coordinates: [72.572350, 23.033539], 
+                coordinates: [72.560817, 23.026436], 
                 image: "law-garden.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Riverfront",
@@ -496,7 +518,7 @@
                 description: "Ahh Riverfront. Very far away but always worth the drive.",
                 coordinates: [72.572350, 23.033539], 
                 image: "riverfront.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Symphony",
@@ -504,7 +526,7 @@
                 description: "Symphony. The place where we have spent more time in the parking than in the actual garden",
                 coordinates: [72.511548, 23.044953], 
                 image: "symphony.jpg",
-                zoom: 20
+                zoom: 18
             },
             {
                 title: "Papa's Home 10 PG",
@@ -512,7 +534,7 @@
                 description: "Your current and hopefully final PG. The place where we have spent the most time together and also the place where you would be reading this while we exchange our gifts.",
                 coordinates: [72.511149, 23.040578], 
                 image: "papas-home.jpg",
-                zoom: 20
+                zoom: 18
             }
         ];
 
@@ -529,7 +551,6 @@
 
         closeIncorrectModalBtn.addEventListener('click', hideIncorrectModal);
 
-        // --- Modal Logic ---
         function checkDate() {
             const selectedDate = document.getElementById('date-select').value;
             if (selectedDate === 'August 3') {
@@ -539,7 +560,6 @@
                 showIncorrectModal();
             }
         }
-
 
         function checkPerson() {
             const selectedPerson = document.getElementById('person-select').value;
@@ -551,26 +571,24 @@
                     document.getElementById('modal-overlay').classList.add('hidden');
                     document.getElementById('main-container').classList.add('active');
                     initializeMap();
-                }, 6000); // Show greeting for 2 seconds
+                }, 4000); // Shorter delay for greeting
             } else {
                 showIncorrectModal();
             }
         }
-
 
         function initializeMap() {
             mapboxgl.accessToken = 'pk.eyJ1IjoiaGFyc2g3NTIiLCJhIjoiY21kYjl3ZzhoMDRxZTJrc2E5M244cmZiMSJ9.EjmLpn3SsneGjPonisifxg';
 
             const map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/outdoors-v12?optimize=true',
+                style: 'mapbox://styles/mapbox/navigation-night-v1?optimize=true',
                 projection: 'globe',
                 zoom: 2,
                 center: [72.5, 23.0],
-                pitch: 60,
+                pitch: 45,
                 coalesceMoveEvents: true,
             });
-
 
             map.on('style.load', () => {
                 map.setConfigProperty('basemap', 'lightPreset', 'night');
@@ -581,7 +599,7 @@
 
             memories.forEach((memory, index) => {
                 const popupContent = `
-                    <div>
+                    <div class="popup-container">
                         <img src="${memory.image}" alt="${memory.title}" class="popup-image">
                         <div class="popup-text">
                             <h3>${memory.title}</h3>
@@ -590,7 +608,7 @@
                     </div>
                 `;
                 
-                const popup = new mapboxgl.Popup({ closeOnClick: true, offset: 25 }).setHTML(popupContent);
+                const popup = new mapboxgl.Popup({ closeOnClick: true, offset: 25, className: 'glass-popup' }).setHTML(popupContent);
                 popups.push(popup);
 
                 new mapboxgl.Marker({ color: 'var(--primary-color)' })
@@ -614,33 +632,33 @@
                     const index = eventElement.getAttribute('data-index');
                     const memory = memories[index];
 
-                    function easing(t) {
-                        return t * (2 - t);
-                    }
-
-
                     map.flyTo({
                         center: memory.coordinates,
-                        zoom: memory.zoom,
-                        speed: 0.8,
-                        curve: 1.4,
-                        easing: easing,
+                        zoom: memory.zoom || 18, // Use defined zoom or a default
+                        speed: 1.0,
+                        curve: 1.2,
                         essential: true
                     });
 
-
                     map.once('moveend', () => {
+                        popups.forEach(p => p.remove()); // Close all other popups
                         popups[index].setLngLat(memory.coordinates).addTo(map);
                     });
 
                     document.querySelectorAll('.timeline-event').forEach(el => el.classList.remove('active'));
                     eventElement.classList.add('active');
+
+                    // Horizontally center the active element in the list
+                    eventElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 }
             });
             
             map.on('load', () => {
-                // Highlight first item on load
-                 document.querySelector('.timeline-event').classList.add('active');
+                // Highlight the first item on load
+                const firstEvent = document.querySelector('.timeline-event');
+                if (firstEvent) {
+                    firstEvent.classList.add('active');
+                }
             });
         }
     </script>
