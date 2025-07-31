@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Two Years Anniversary</title>
+    <title>Our Second Anniversary</title>
 
     <!-- Mapbox GL JS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.13.0/mapbox-gl.css" rel="stylesheet">
@@ -147,7 +147,6 @@
         }
         
         .modal-content h2 {
-            font-family: 'Playfair Display', serif;
             margin-bottom: 20px;
             color: var(--text-color);
         }
@@ -218,7 +217,6 @@
         }
 
         .incorrect-modal-content h2 {
-            font-family: 'Playfair Display', serif;
             color: var(--error-color);
             margin-top: 0;
         }
@@ -261,6 +259,9 @@
             -webkit-backdrop-filter: blur(15px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            /* --- MODIFICATION: Added max-height and overflow for robustness on small screens --- */
+            max-height: 80vh;
+            overflow-y: auto;
         }
         
         .popup-image {
@@ -276,7 +277,6 @@
         }
         
         .popup-text h3 {
-             font-family: 'Playfair Display', serif;
              margin: 0 0 5px 0;
              font-size: 1.5rem;
              color: var(--text-color);
@@ -332,7 +332,7 @@
     <div class="incorrect-modal-overlay" id="incorrect-modal">
         <div class="incorrect-modal-content">
             <h2>🤔 Wrong Answer</h2>
-            <p>It seems this website was intended for someone else. Please kindly hand the QR Code back to its owner.</p>
+            <p id="incorrect-message">It seems this website was intended for someone else. Please kindly hand the QR Code back to its owner.</p>
             <button id="close-incorrect-modal">Try Again</button>
         </div>
     </div>
@@ -536,11 +536,24 @@
             }
         ];
 
+        let wrongAttempts = 0;
+
         const incorrectModal = document.getElementById('incorrect-modal');
         const closeIncorrectModalBtn = document.getElementById('close-incorrect-modal');
 
         function showIncorrectModal() {
+            const messages = [
+                "It seems this website was intended for someone else. Please kindly hand the QR Code back to its owner.",
+                "Stop messing around! 😜 You know these aren't the right answers!",
+                "Honestly, you should stop now... This isn't funny anymore. 🤨",
+                "I am serious ok. This is wasting time now. 😐",
+                "I am not even going to talk now. Just let me know when you are done. 🤐"
+            ];
+            
             incorrectModal.classList.add('visible');
+            const messageElement = document.getElementById('incorrect-message');
+            messageElement.textContent = messages[Math.min(wrongAttempts, messages.length - 1)];
+            wrongAttempts++;
         }
 
         function hideIncorrectModal() {
@@ -606,12 +619,11 @@
                     </div>
                 `;
                 
-                // --- MODIFIED: Added anchor: 'bottom' to encourage opening upwards ---
+                // --- MODIFICATION: Removed anchor property to allow automatic placement ---
                 const popup = new mapboxgl.Popup({ 
                     closeOnClick: true, 
                     offset: 25, 
-                    className: 'glass-popup',
-                    anchor: 'bottom' 
+                    className: 'glass-popup'
                 }).setHTML(popupContent);
                 
                 popups.push(popup);
