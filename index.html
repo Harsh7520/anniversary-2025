@@ -622,8 +622,9 @@
                 // --- MODIFICATION: Removed anchor property to allow automatic placement ---
                 const popup = new mapboxgl.Popup({ 
                     closeOnClick: true, 
-                    offset: 25, 
-                    className: 'glass-popup'
+                    offset: 35, 
+                    className: 'glass-popup',
+                    anchor: 'bottom' // Optional: can be removed to let Mapbox handle placement
                 }).setHTML(popupContent);
                 
                 popups.push(popup);
