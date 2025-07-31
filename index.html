@@ -64,8 +64,8 @@
             display: flex;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            gap: 12px;
-            padding: 0 20px;
+            gap: 10px; /* Reduced gap slightly */
+            padding: 0 15px; /* Reduced padding slightly */
             list-style: none;
             margin: 0;
             -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
@@ -79,10 +79,10 @@
         /* --- Glassmorphism Timeline Event --- */
         .timeline-event {
             flex: 0 0 auto; /* Prevent items from shrinking */
-            width: 180px;
-            padding: 15px;
+            width: 120px; /* --- MODIFIED: Reduced width to fit more items --- */
+            padding: 12px; /* --- MODIFIED: Reduced padding for a more compact look --- */
             cursor: pointer;
-            border-radius: 18px;
+            border-radius: 16px;
             scroll-snap-align: start;
             transition: background-color 0.4s, border 0.4s;
 
@@ -105,13 +105,12 @@
 
         .timeline-event .date {
             font-weight: 500;
-            font-size: 0.85rem;
-            /* color: var(--secondary-color); */
-            margin-bottom: 5px;
+            font-size: 0.75rem; /* Slightly smaller font for date */
+            margin-bottom: 4px;
         }
 
         .timeline-event .title {
-            font-size: 1.05rem;
+            font-size: 0.9rem; /* Slightly smaller font for title */
             color: var(--text-color);
             font-weight: 400;
         }
@@ -267,7 +266,7 @@
         
         .popup-image {
             width: 100%;
-            height: 250px; /* Fixed height for consistency */
+            height: 180px; /* Reduced image height for a more compact popup */
             object-fit: cover;
             border-top-left-radius: 16px;
             border-top-right-radius: 16px;
@@ -608,7 +607,14 @@
                     </div>
                 `;
                 
-                const popup = new mapboxgl.Popup({ closeOnClick: true, offset: 25, className: 'glass-popup' }).setHTML(popupContent);
+                // --- MODIFIED: Added anchor: 'bottom' to encourage opening upwards ---
+                const popup = new mapboxgl.Popup({ 
+                    closeOnClick: true, 
+                    offset: 25, 
+                    className: 'glass-popup',
+                    anchor: 'bottom' 
+                }).setHTML(popupContent);
+                
                 popups.push(popup);
 
                 new mapboxgl.Marker({ color: 'var(--primary-color)' })
